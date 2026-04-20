@@ -1,55 +1,59 @@
 window.pageInits = window.pageInits || {};
 
-window.pageInits.profile = function () {
-  const data = API.getMock('profile');
+window.pageInits.profile = async function () {
+  const data = await API.profile();
   if (!data) return;
 
-  // Company fields
-  document.getElementById('prof-bin').value      = data.company.bin      || '';
-  document.getElementById('prof-name').value     = data.company.name     || '';
-  document.getElementById('prof-director').value = data.company.director || '';
-  document.getElementById('prof-iik').value      = data.company.iik      || '';
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  setVal('prof-bin',      data.bin);
+  setVal('prof-name',     data.name);
+  setVal('prof-director', data.director);
+  setVal('prof-iik',      data.iik);
+
+  // Keywords
+  const kw = Array.isArray(data.keywords) ? data.keywords.join(', ') : (data.keywords || '');
+  setVal('prof-keywords', kw);
 
   // ECP cards
   const ecpEl = document.getElementById('prof-ecp-list');
-  ecpEl.innerHTML = '';
-  data.ecp.forEach(key => {
-    const div = document.createElement('div');
-    div.className = 'ecp-status';
-    div.innerHTML = `
-      <div class="ecp-icon ${key.valid ? 'active' : 'inactive'}">${key.valid ? '🔐' : '⚠️'}</div>
-      <div style="flex:1">
-        <div class="font-bold" style="font-size:13px">${key.label}</div>
-        <div class="text-muted text-xs">Тип: ${key.type} · Действует до ${key.expires}</div>
-      </div>
-      <span class="badge ${key.valid ? 'badge-success' : 'badge-danger'}">${key.valid ? 'Активен' : 'Истёк'}</span>
-    `;
-    ecpEl.appendChild(div);
-  });
-
-  // Keywords
-  document.getElementById('prof-keywords').value = data.keywords || '';
-
-  // Notifications
-  document.getElementById('notif-new').checked   = data.notifications.new_tender;
-  document.getElementById('notif-result').checked = data.notifications.result;
-  document.getElementById('notif-auc').checked   = data.notifications.auction_start;
+  if (ecpEl) {
+    ecpEl.innerHTML = '';
+    (data.ecp || []).forEach(key => {
+      const div = document.createElement('div');
+      div.className = 'ecp-status';
+      div.innerHTML = `
+        <div class="ecp-icon ${key.valid ? 'active' : 'inactive'}">${key.valid ? '🔐' : '⚠️'}</div>
+        <div style="flex:1">
+          <div class="font-bold" style="font-size:13px">${key.label}</div>
+          <div class="text-muted text-xs">Тип: ${key.type} · ${key.valid ? 'Файл найден' : 'Файл не найден'}</div>
+        </div>
+        <span class="badge ${key.valid ? 'badge-success' : 'badge-danger'}">${key.valid ? 'Активен' : 'Не найден'}</span>
+      `;
+      ecpEl.appendChild(div);
+    });
+  }
 };
 
-// Save company
-document.getElementById('prof-save-btn')?.addEventListener('click', () => {
-  const payload = {
-    bin:      document.getElementById('prof-bin')?.value,
-    name:     document.getElementById('prof-name')?.value,
-    director: document.getElementById('prof-director')?.value,
-    iik:      document.getElementById('prof-iik')?.value,
-    keywords: document.getElementById('prof-keywords')?.value,
+// Save
+document.getElementById('prof-save-btn')?.addEventListener('click', async () => {
+  const body = {
+    bin:      document.getElementById('prof-bin')?.value      || '',
+    name:     document.getElementById('prof-name')?.value     || '',
+    director: document.getElementById('prof-director')?.value || '',
+    iik:      document.getElementById('prof-iik')?.value      || '',
+    keywords: document.getElementById('prof-keywords')?.value || '',
   };
-  NK.send('save_profile', payload);
-  NK.toast('Профиль сохранён', 'success');
+  const res = await API.saveProfile(body);
+  if (res?.ok) {
+    NK.toast('Профиль сохранён', 'success');
+  } else {
+    // Fallback — отправить через бот
+    API.send('save_profile', body);
+    NK.toast('Отправлено в бот для сохранения', 'info');
+  }
 });
 
-// Upload ECP
+// ECP upload hint
 document.getElementById('prof-ecp-upload')?.addEventListener('click', () => {
   NK.toast('Загрузите ЭЦП через бот командой /ecp', 'info');
 });

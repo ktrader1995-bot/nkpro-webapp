@@ -6,6 +6,9 @@
   <title>NK PRO</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- API URL — замени на адрес своего сервера -->
+  <script>window.WEBAPP_API_URL = 'http://localhost:8000';</script>
 </head>
 <body>
 
@@ -100,8 +103,24 @@
           <div class="stat-sub">тендеров</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Сумма побед</div>
-          <div class="stat-value" style="font-size:16px;margin-top:4px" id="dash-sum">—</div>
+          <div class="stat-label">Конверсия</div>
+          <div class="stat-value accent" id="dash-conv">—</div>
+        </div>
+      </div>
+      <div class="stat-card" style="margin-bottom:10px">
+        <div class="stat-label">Сумма побед</div>
+        <div class="stat-value" style="font-size:18px;margin-top:4px" id="dash-sum">—</div>
+      </div>
+
+      <!-- Charts row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="charts-row">
+        <div class="card" id="chart-wins-wrap">
+          <div class="card-title">Заявки по месяцам</div>
+          <div style="height:130px"><canvas id="chart-wins"></canvas></div>
+        </div>
+        <div class="card" id="chart-type-wrap">
+          <div class="card-title">По типам</div>
+          <div style="height:130px"><canvas id="chart-type"></canvas></div>
         </div>
       </div>
 

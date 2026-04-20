@@ -1,75 +1,111 @@
 window.pageInits = window.pageInits || {};
 
-window.pageInits.auction = function () {
-  const data = API.getMock('auction');
-  if (!data) return;
+let _auctionLotId = '';
+let _auctionRefresh = null;
 
+window.pageInits.auction = async function () {
+  clearInterval(_auctionRefresh);
+  await loadAuction();
+  // Автообновление каждые 10 сек если аукцион живой
+  _auctionRefresh = setInterval(async () => {
+    const data = await API.auction(_auctionLotId);
+    if (data?.is_live) renderAuction(data);
+  }, 10000);
+};
+
+async function loadAuction() {
+  const data = await API.auction();
+  if (!data) return;
+  _auctionLotId = data.lot?.id || '';
+  renderAuction(data);
+}
+
+function renderAuction(data) {
   const live = data.is_live;
 
-  // Live banner
   document.getElementById('auc-live-banner')?.classList.toggle('hidden', !live);
   document.getElementById('auc-no-live')?.classList.toggle('hidden', live);
 
   if (!live) return;
 
-  const lot = data.lot;
-  document.getElementById('auc-lot-name').textContent  = lot.name;
-  document.getElementById('auc-lot-id').textContent    = lot.id;
-  document.getElementById('auc-best-price').textContent = NK.fmt.money(data.current_best);
-  document.getElementById('auc-start-price').textContent = NK.fmt.money(lot.start_price);
-  document.getElementById('auc-stop-price').textContent  = NK.fmt.money(data.stop_price);
+  const lot = data.lot || {};
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-  const dropPct = ((1 - data.current_best / lot.start_price) * 100).toFixed(1);
-  document.getElementById('auc-drop-pct').textContent = '−' + dropPct + '%';
+  setText('auc-lot-name',    lot.name || '');
+  setText('auc-lot-id',      lot.id   || '');
+  setText('auc-best-price',  NK.fmt.money(data.current_best));
+  setText('auc-start-price', NK.fmt.money(lot.start_price));
+
+  const dropPct = lot.start_price
+    ? ((1 - data.current_best / lot.start_price) * 100).toFixed(1)
+    : '0.0';
+  setText('auc-drop-pct', '−' + dropPct + '%');
 
   // Log
   const logEl = document.getElementById('auc-log');
-  logEl.innerHTML = '';
-  data.log.forEach(entry => {
-    const row = document.createElement('div');
-    row.className = 'log-entry ' + (entry.ours ? 'ours' : 'theirs');
-    row.innerHTML = `
-      <span class="mono" style="font-size:11px;color:inherit;opacity:0.6">${entry.time}</span>
-      <span>${entry.name}</span>
-      <span class="font-bold">${NK.fmt.money(entry.price)}</span>
-    `;
-    logEl.appendChild(row);
-  });
+  if (logEl) {
+    logEl.innerHTML = '';
+    (data.log || []).forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'log-entry ' + (entry.is_ours ? 'ours' : 'theirs');
+      const time = (entry.ts || '').slice(11, 19);
+      row.innerHTML = `
+        <span class="mono" style="font-size:11px;opacity:0.6">${time}</span>
+        <span>${entry.bidder || '—'}</span>
+        <span class="font-bold">${NK.fmt.money(entry.price)}</span>
+      `;
+      logEl.appendChild(row);
+    });
+    logEl.scrollTop = 0;
+  }
 
   // Participants
   const tBody = document.getElementById('auc-participants-body');
-  tBody.innerHTML = '';
-  data.participants.forEach(p => {
-    const tr = document.createElement('tr');
-    if (p.is_me) tr.style.color = 'var(--accent)';
-    tr.innerHTML = `
-      <td>${p.rank === 1 ? '🥇 1' : p.rank}</td>
-      <td>${p.is_me ? '<strong>' + p.name + '</strong>' : p.name}</td>
-      <td class="font-bold">${NK.fmt.money(p.price)}</td>
-    `;
-    tBody.appendChild(tr);
-  });
+  if (tBody) {
+    tBody.innerHTML = '';
+    (data.participants || []).forEach(p => {
+      const tr = document.createElement('tr');
+      if (p.is_ours) tr.style.color = 'var(--accent)';
+      tr.innerHTML = `
+        <td>${p.rank === 1 ? '🥇 1' : p.rank}</td>
+        <td>${p.is_ours ? '<strong>' + (p.bidder || 'Вы') + '</strong>' : (p.bidder || '—')}</td>
+        <td class="font-bold">${NK.fmt.money(p.price)}</td>
+      `;
+      tBody.appendChild(tr);
+    });
+  }
 
-  // Settings defaults
-  document.getElementById('auc-stop-input').value  = data.stop_price;
-  document.getElementById('auc-step-input').value  = 50000;
-};
+  // Stop price default
+  const stopInput = document.getElementById('auc-stop-input');
+  if (stopInput && !stopInput.value && lot.start_price) {
+    stopInput.value = Math.round(lot.start_price * 0.85);
+  }
+  const setText2 = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setText2('auc-stop-price', NK.fmt.money(parseFloat(document.getElementById('auc-stop-input')?.value)));
+}
 
-// Bid button
-document.getElementById('auc-bid-btn')?.addEventListener('click', () => {
-  const data = API.getMock('auction');
-  const step  = parseFloat(document.getElementById('auc-step-input')?.value) || 50000;
-  const stop  = parseFloat(document.getElementById('auc-stop-input')?.value) || 0;
-  const bid   = data.current_best - step;
+// Bid
+document.getElementById('auc-bid-btn')?.addEventListener('click', async () => {
+  const data = await API.auction(_auctionLotId);
+  if (!data?.is_live) { NK.toast('Аукцион не активен', 'error'); return; }
+  const step = parseFloat(document.getElementById('auc-step-input')?.value) || 50000;
+  const stop = parseFloat(document.getElementById('auc-stop-input')?.value) || 0;
+  const bid  = (data.current_best || 0) - step;
   if (bid < stop) { NK.toast('Ставка ниже стоп-цены!', 'error'); return; }
   NK.confirm(`Подать ставку ${NK.fmt.money(bid)}?`, () => {
-    NK.send('auction_bid', { lot_id: data.lot.id, price: bid });
-    NK.toast('Ставка отправлена!', 'success');
+    API.send('auction_bid', { lot_id: _auctionLotId, price: bid });
+    NK.toast('Ставка отправлена в бот', 'success');
   });
 });
 
-// Stop button
+// Stop
 document.getElementById('auc-stop-btn')?.addEventListener('click', () => {
-  NK.send('auction_stop', {});
-  NK.toast('Авто-ставки остановлены', 'info');
+  API.send('auction_stop', {});
+  NK.toast('Авто-торги остановлены', 'info');
+});
+
+// Update stop price label on input
+document.getElementById('auc-stop-input')?.addEventListener('input', function () {
+  const el = document.getElementById('auc-stop-price');
+  if (el) el.textContent = NK.fmt.money(parseFloat(this.value) || 0);
 });
