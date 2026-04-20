@@ -152,23 +152,24 @@
     <div id="page-search" class="page">
       <div class="page-header">
         <h1>Поиск</h1>
-        <div class="subtitle">Тендеры по вашим ключевым словам</div>
+        <div class="subtitle">Найти закупку по номеру объявления</div>
       </div>
 
-      <div class="search-bar">
-        <input id="search-input" class="input" placeholder="Поиск по названию или номеру...">
-        <button class="btn btn-secondary">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <div class="card section">
+        <div class="input-group" style="margin-bottom:10px">
+          <label class="input-label">Номер объявления (из URL портала)</label>
+          <input id="search-input" class="input" placeholder="Например: 12345678" inputmode="numeric"
+            style="font-size:16px;letter-spacing:0.03em">
+        </div>
+        <button id="search-btn" class="btn btn-primary btn-full">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
             <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
           </svg>
+          Найти на goszakup.gov.kz
         </button>
-      </div>
-
-      <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
-        <button class="btn btn-secondary btn-sm search-filter-btn active" data-type="all">Все</button>
-        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="ЗЦП">ЗЦП</button>
-        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="Аукцион">Аукцион</button>
-        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="Конкурс">Конкурс</button>
+        <div class="tooltip-text mt-2">
+          Номер из адреса: goszakup.gov.kz/ru/announce/index/<strong>12345678</strong>
+        </div>
       </div>
 
       <div id="search-results"></div>
