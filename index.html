@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NK PRO</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ─── SIDEBAR (desktop) ──────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">NK</div>
+      <div class="logo-text">NK <span>PRO</span></div>
+    </div>
+
+    <nav class="nav-group">
+      <div class="nav-label">Главное</div>
+      <button class="nav-item active" data-page="dashboard">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Обзор
+      </button>
+      <button class="nav-item" data-page="search">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        Поиск
+      </button>
+
+      <div class="nav-label" style="margin-top:8px">Участие</div>
+      <button class="nav-item" data-page="zcz">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        ЗЦП
+      </button>
+      <button class="nav-item" data-page="auction">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+        Аукцион
+        <span class="live-dot" id="sidebar-live-dot"></span>
+      </button>
+      <button class="nav-item" data-page="konkurs">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Конкурс
+      </button>
+
+      <div class="nav-label" style="margin-top:8px">Данные</div>
+      <button class="nav-item" data-page="history">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        История
+      </button>
+      <button class="nav-item" data-page="profile">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+        Профиль
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">NK PRO v2.0 · goszakup.gov.kz</div>
+  </aside>
+
+  <!-- ─── MAIN CONTENT ───────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1>Обзор</h1>
+        <div class="subtitle">Актуальная сводка по вашим тендерам</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Найдено</div>
+          <div class="stat-value accent" id="dash-found">—</div>
+          <div class="stat-sub">тендеров</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Активных</div>
+          <div class="stat-value" id="dash-active">—</div>
+          <div class="stat-sub">заявок</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Победы</div>
+          <div class="stat-value success" id="dash-wins">—</div>
+          <div class="stat-sub">тендеров</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Сумма побед</div>
+          <div class="stat-value" style="font-size:16px;margin-top:4px" id="dash-sum">—</div>
+        </div>
+      </div>
+
+      <!-- Live auction mini -->
+      <div id="dash-live" class="live-banner hidden">
+        <div class="live-dot-large"></div>
+        <div>
+          <div class="live-banner-text">Идёт аукцион</div>
+          <div class="text-xs text-muted mt-2">Нажмите для перехода</div>
+        </div>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" data-page="auction">Открыть</button>
+      </div>
+
+      <!-- AI Tip -->
+      <div class="card section">
+        <div class="card-title">ИИ-рекомендация дня</div>
+        <div style="font-size:13.5px;line-height:1.6;color:var(--text)" id="dash-ai-tip">Загрузка...</div>
+      </div>
+
+      <!-- Tender list -->
+      <div class="section-row">
+        <div class="section-title">Свежие тендеры</div>
+        <button class="btn btn-ghost btn-sm" data-page="search">Все →</button>
+      </div>
+      <div id="dash-tender-list"></div>
+    </div>
+
+    <!-- SEARCH -->
+    <div id="page-search" class="page">
+      <div class="page-header">
+        <h1>Поиск</h1>
+        <div class="subtitle">Тендеры по вашим ключевым словам</div>
+      </div>
+
+      <div class="search-bar">
+        <input id="search-input" class="input" placeholder="Поиск по названию или номеру...">
+        <button class="btn btn-secondary">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex gap-2 mb-3" style="flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm search-filter-btn active" data-type="all">Все</button>
+        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="ЗЦП">ЗЦП</button>
+        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="Аукцион">Аукцион</button>
+        <button class="btn btn-secondary btn-sm search-filter-btn" data-type="Конкурс">Конкурс</button>
+      </div>
+
+      <div id="search-results"></div>
+    </div>
+
+    <!-- ZCZ -->
+    <div id="page-zcz" class="page">
+      <div class="page-header">
+        <h1>ЗЦП</h1>
+        <div class="subtitle">Запрос ценовых предложений</div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchZczTab('single')">Одиночная</button>
+        <button class="tab-btn" onclick="switchZczTab('batch')">Пакетная</button>
+      </div>
+
+      <!-- Single -->
+      <div id="zcz-tab-single">
+        <div class="input-group">
+          <label class="input-label">Номер тендера (лот)</label>
+          <input id="zcz-lot-id" class="input" placeholder="ZCZ-2025-XXXXXX">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Начальная цена</label>
+          <div class="input-addon">
+            <input id="zcz-start-price" class="input" type="number" placeholder="0">
+            <span class="input-addon-text">₸</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Ваша цена</label>
+          <div class="input-addon">
+            <input id="zcz-price" class="input" type="number" placeholder="0">
+            <span class="input-addon-text">₸</span>
+          </div>
+          <div class="tooltip-text">Снижение: <strong id="zcz-discount">—</strong></div>
+        </div>
+
+        <div id="zcz-antidump" class="alert alert-warning hidden">
+          ⚠️ Снижение более 10% — требуется обоснование антидемпинга
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">БИН</label>
+          <input class="input" value="123456789012" readonly>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Наименование компании</label>
+          <input class="input" value='ТОО "NK PRO"' readonly>
+        </div>
+
+        <button id="zcz-submit-btn" class="btn btn-primary btn-full" style="margin-top:8px">
+          🔐 Подписать ЭЦП и подать
+        </button>
+      </div>
+
+      <!-- Batch -->
+      <div id="zcz-tab-batch" class="hidden">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-muted text-sm">Доступные тендеры</span>
+          <button id="zcz-select-80" class="btn btn-secondary btn-sm">Выбрать ≥80%</button>
+        </div>
+
+        <div id="zcz-batch-list"></div>
+
+        <button id="zcz-batch-submit" class="btn btn-primary btn-full mt-3">
+          🔐 Подать по выбранным
+        </button>
+
+        <!-- Progress -->
+        <div id="zcz-progress-wrap" class="card hidden mt-3">
+          <div class="card-title">Прогресс подачи</div>
+          <div class="progress-bar mb-3" style="height:8px">
+            <div class="progress-fill" id="zcz-progress-bar" style="width:0%"></div>
+          </div>
+          <div id="zcz-progress-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUCTION -->
+    <div id="page-auction" class="page">
+      <div class="page-header">
+        <h1>Аукцион</h1>
+        <div class="subtitle">Торги в реальном времени</div>
+      </div>
+
+      <div id="auc-no-live" class="card" style="text-align:center;padding:32px">
+        <div style="font-size:32px;margin-bottom:12px">🏛️</div>
+        <div class="section-title">Активных аукционов нет</div>
+        <div class="text-muted text-sm mt-2">Бот уведомит вас при старте торгов</div>
+      </div>
+
+      <div id="auc-live-banner" class="live-banner hidden">
+        <div class="live-dot-large"></div>
+        <div class="live-banner-text">Торги идут сейчас</div>
+      </div>
+
+      <div id="auc-lot-info" class="card section">
+        <div class="tender-id mono" id="auc-lot-id"></div>
+        <div class="tender-name" id="auc-lot-name" style="margin:6px 0"></div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+        <div class="stat-card" style="padding:12px">
+          <div class="stat-label">Лучшая</div>
+          <div class="stat-value accent" style="font-size:16px" id="auc-best-price">—</div>
+        </div>
+        <div class="stat-card" style="padding:12px">
+          <div class="stat-label">Старт</div>
+          <div class="stat-value" style="font-size:14px" id="auc-start-price">—</div>
+        </div>
+        <div class="stat-card" style="padding:12px">
+          <div class="stat-label">Снижение</div>
+          <div class="stat-value danger" style="font-size:16px" id="auc-drop-pct">—</div>
+        </div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Журнал ставок</div>
+        <div class="auction-log" id="auc-log"></div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Участники</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Участник</th><th>Цена</th></tr></thead>
+            <tbody id="auc-participants-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Настройки авто-торгов</div>
+        <div class="input-group">
+          <label class="input-label">Стоп-цена (₸)</label>
+          <input id="auc-stop-input" class="input" type="number">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Шаг снижения (₸)</label>
+          <input id="auc-step-input" class="input" type="number">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Стратегия</label>
+          <select class="input" id="auc-strategy">
+            <option>Агрессивная (сразу)</option>
+            <option>Выжидательная (последние 30 сек)</option>
+            <option>Ручная</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button id="auc-bid-btn" class="btn btn-primary" style="flex:1">Подать ставку</button>
+          <button id="auc-stop-btn" class="btn btn-danger">Стоп</button>
+        </div>
+        <div class="text-muted text-xs mt-2">Стоп-цена: <strong id="auc-stop-price">—</strong></div>
+      </div>
+    </div>
+
+    <!-- KONKURS -->
+    <div id="page-konkurs" class="page">
+      <div class="page-header">
+        <h1>Конкурс</h1>
+        <div class="subtitle">Конкурсные закупки</div>
+      </div>
+
+      <div class="card section">
+        <div class="tender-id mono" id="kon-lot-id"></div>
+        <div class="tender-name" id="kon-lot-name" style="margin:6px 0"></div>
+        <div class="tender-meta">
+          <span class="tender-price" id="kon-lot-price">—</span>
+          <span class="text-muted">до <span id="kon-lot-deadline">—</span></span>
+        </div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">ИИ-анализ</div>
+        <div class="flex items-center gap-3 mb-3">
+          <div>
+            <div class="stat-label">Шанс победы</div>
+            <div class="stat-value" id="kon-ai-chance">—</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;line-height:1.5" id="kon-ai-comment"></div>
+          </div>
+        </div>
+        <div class="alert alert-info">
+          💡 Рекомендуемая цена: <strong id="kon-ai-price">—</strong>
+        </div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Критерии оценки</div>
+        <div id="kon-criteria"></div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Документы</div>
+        <ul class="checklist" id="kon-docs"></ul>
+        <button id="kon-gen-btn" class="btn btn-secondary btn-full mt-3">
+          ✨ Сгенерировать техпредложение (ИИ)
+        </button>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Подача заявки</div>
+        <div class="input-group">
+          <label class="input-label">Ваша цена (₸)</label>
+          <div class="input-addon">
+            <input id="kon-price-input" class="input" type="number">
+            <span class="input-addon-text">₸</span>
+          </div>
+        </div>
+        <button id="kon-submit-btn" class="btn btn-primary btn-full">
+          🔐 Подписать ЭЦП и подать
+        </button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="page-history" class="page">
+      <div class="page-header">
+        <h1>История</h1>
+        <div class="subtitle">Все ваши заявки и результаты</div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat-card">
+          <div class="stat-label">Всего</div>
+          <div class="stat-value" id="hist-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Победы</div>
+          <div class="stat-value success" id="hist-wins">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Конверсия</div>
+          <div class="stat-value accent" id="hist-conv">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Сумма побед</div>
+          <div class="stat-value" style="font-size:15px;margin-top:6px" id="hist-sum">—</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mb-3" style="flex-wrap:wrap;margin-top:14px">
+        <button class="btn btn-secondary btn-sm hist-filter-btn active" data-filter="all">Все</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="win">Победы</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="loss">Проигрыши</button>
+        <button id="hist-export-btn" class="btn btn-secondary btn-sm" style="margin-left:auto">↓ Excel</button>
+      </div>
+
+      <div class="table-wrap section">
+        <table>
+          <thead>
+            <tr>
+              <th>Тендер</th><th>Способ</th><th>Наша цена</th>
+              <th>Победитель</th><th>Разрыв</th><th>Итог</th>
+            </tr>
+          </thead>
+          <tbody id="hist-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Топ конкурентов</div>
+        <div id="hist-competitors"></div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="page-profile" class="page">
+      <div class="page-header">
+        <h1>Профиль</h1>
+        <div class="subtitle">Данные компании и ЭЦП</div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Данные компании</div>
+        <div class="input-group">
+          <label class="input-label">БИН</label>
+          <input id="prof-bin" class="input mono" placeholder="000000000000">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Наименование</label>
+          <input id="prof-name" class="input" placeholder='ТОО "..."'>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Директор</label>
+          <input id="prof-director" class="input" placeholder="Фамилия И.О.">
+        </div>
+        <div class="input-group">
+          <label class="input-label">ИИК (счёт)</label>
+          <input id="prof-iik" class="input mono" placeholder="KZ...">
+        </div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Статус ЭЦП</div>
+        <div id="prof-ecp-list"></div>
+        <button id="prof-ecp-upload" class="btn btn-secondary btn-full mt-3">
+          Обновить ЭЦП через бот
+        </button>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Ключевые слова мониторинга</div>
+        <textarea id="prof-keywords" class="input" rows="3" style="resize:vertical;line-height:1.6"
+          placeholder="щебень, канцтовары, ..."></textarea>
+        <div class="tooltip-text">Разделяйте запятой. Бот ищет новые тендеры по этим словам каждые 10 минут.</div>
+      </div>
+
+      <div class="card section">
+        <div class="card-title">Уведомления</div>
+        <div class="checklist">
+          <label class="checklist-item" style="cursor:pointer">
+            <input type="checkbox" id="notif-new" style="accent-color:var(--accent)">
+            <span>Новые тендеры по ключевым словам</span>
+          </label>
+          <label class="checklist-item" style="cursor:pointer">
+            <input type="checkbox" id="notif-result" style="accent-color:var(--accent)">
+            <span>Результаты тендеров</span>
+          </label>
+          <label class="checklist-item" style="cursor:pointer">
+            <input type="checkbox" id="notif-auc" style="accent-color:var(--accent)">
+            <span>Старт аукциона</span>
+          </label>
+        </div>
+      </div>
+
+      <button id="prof-save-btn" class="btn btn-primary btn-full">Сохранить</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── BOTTOM NAV (mobile) ─────────────────────── -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-item active" data-page="dashboard">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    Обзор
+  </button>
+  <button class="bottom-nav-item" data-page="search">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    Поиск
+  </button>
+  <button class="bottom-nav-item" data-page="zcz">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    ЗЦП
+  </button>
+  <button class="bottom-nav-item" data-page="auction">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+    </svg>
+    <span class="live-dot" style="top:4px;right:calc(50% - 16px)"></span>
+    Торги
+  </button>
+  <button class="bottom-nav-item" data-page="history">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    История
+  </button>
+  <button class="bottom-nav-item" data-page="profile">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+    Профиль
+  </button>
+</nav>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/search.js"></script>
+<script src="js/pages/zcz.js"></script>
+<script src="js/pages/auction.js"></script>
+<script src="js/pages/konkurs.js"></script>
+<script src="js/pages/history.js"></script>
+<script src="js/pages/profile.js"></script>
+
+<script>
+// ZCZ tab switcher
+function switchZczTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (tab === 'single' && i === 0) || (tab === 'batch' && i === 1)));
+  document.getElementById('zcz-tab-single').classList.toggle('hidden', tab !== 'single');
+  document.getElementById('zcz-tab-batch').classList.toggle('hidden', tab !== 'batch');
+  if (tab === 'batch') window.pageInits?.zcz?.();
+}
+
+// Filter buttons toggle style
+document.querySelectorAll('.search-filter-btn, .hist-filter-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    this.closest('.flex')?.querySelectorAll('.search-filter-btn, .hist-filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
