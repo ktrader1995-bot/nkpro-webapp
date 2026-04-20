@@ -11,7 +11,10 @@ window.API = (() => {
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '') url.searchParams.set(k, v); });
     try {
       const res = await fetch(url, {
-        headers: { 'X-Init-Data': window.Telegram?.WebApp?.initData || '' }
+        headers: {
+          'X-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'ngrok-skip-browser-warning': 'true',
+        }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
@@ -27,7 +30,8 @@ window.API = (() => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Init-Data': window.Telegram?.WebApp?.initData || ''
+          'X-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(body),
       });
