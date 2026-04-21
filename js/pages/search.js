@@ -209,10 +209,14 @@ function showSubmitForm(idx, type, startPrice, suggested) {
           <option>Ручная</option>
         </select>
       </div>
+      <div class="alert alert-info" style="margin-top:4px">
+        📋 Этап 1: бот подаст заявку при открытии приёма<br>
+        🔨 Этап 2: бот начнёт торги когда аукцион стартует
+      </div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-primary" style="flex:1"
           onclick="submitAuction(${idx}, ${startPrice})">
-          🔨 Запустить авто-торги
+          ⏳ Сохранить → авто-торги
         </button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">
           ✕
