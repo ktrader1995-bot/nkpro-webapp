@@ -388,6 +388,7 @@
         <button class="btn btn-secondary btn-sm hist-filter-btn active" data-filter="all">Все</button>
         <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="win">Победы</button>
         <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="loss">Проигрыши</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="active">В процессе</button>
         <button id="hist-export-btn" class="btn btn-secondary btn-sm" style="margin-left:auto">↓ Excel</button>
       </div>
 
@@ -511,13 +512,6 @@ function switchZczTab(tab) {
   if (tab === 'batch') window.pageInits?.zcz?.();
 }
 
-// Filter buttons toggle style
-document.querySelectorAll('.search-filter-btn, .hist-filter-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    this.closest('.flex')?.querySelectorAll('.search-filter-btn, .hist-filter-btn').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-  });
-});
 </script>
 </body>
 </html>

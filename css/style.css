@@ -487,6 +487,12 @@ html, body {
   box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
+.hist-filter-btn.active {
+  background: var(--accent);
+  color: #0b0c0f;
+  border-color: var(--accent);
+}
+
 /* ─── TENDER LIST ITEM ───────────────────────── */
 .tender-item {
   background: var(--bg-card);
