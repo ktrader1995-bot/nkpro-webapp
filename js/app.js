@@ -10,8 +10,11 @@ if (tg) {
 // ── Navigation ───────────────────────────────────────────────
 const pages = {};
 const navItems = document.querySelectorAll('[data-page]');
+let _currentPage = '';
 
 function navigateTo(pageId) {
+  if (window.pageCleanups?.[_currentPage]) window.pageCleanups[_currentPage]();
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('[data-page]').forEach(n => n.classList.remove('active'));
 
@@ -20,6 +23,7 @@ function navigateTo(pageId) {
 
   document.querySelectorAll(`[data-page="${pageId}"]`).forEach(n => n.classList.add('active'));
 
+  _currentPage = pageId;
   if (window.pageInits?.[pageId]) window.pageInits[pageId]();
 }
 

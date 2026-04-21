@@ -272,12 +272,13 @@
         <div class="live-banner-text">Торги идут сейчас</div>
       </div>
 
-      <div id="auc-lot-info" class="card section">
+      <div id="auc-lot-info" class="card section hidden">
         <div class="tender-id mono" id="auc-lot-id"></div>
         <div class="tender-name" id="auc-lot-name" style="margin:6px 0"></div>
+        <div class="text-muted text-xs" id="auc-last-updated"></div>
       </div>
 
-      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+      <div id="auc-metrics" class="stat-grid hidden" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
         <div class="stat-card" style="padding:12px">
           <div class="stat-label">Лучшая</div>
           <div class="stat-value accent" style="font-size:16px" id="auc-best-price">—</div>
@@ -292,12 +293,12 @@
         </div>
       </div>
 
-      <div class="card section">
+      <div id="auc-log-card" class="card section hidden">
         <div class="card-title">Журнал ставок</div>
         <div class="auction-log" id="auc-log"></div>
       </div>
 
-      <div class="card section">
+      <div id="auc-participants-card" class="card section hidden">
         <div class="card-title">Участники</div>
         <div class="table-wrap">
           <table>
@@ -311,11 +312,11 @@
         <div class="card-title">Настройки авто-торгов</div>
         <div class="input-group">
           <label class="input-label">Стоп-цена (₸)</label>
-          <input id="auc-stop-input" class="input" type="number">
+          <input id="auc-stop-input" class="input" type="number" placeholder="например 8500000">
         </div>
         <div class="input-group">
           <label class="input-label">Шаг снижения (₸)</label>
-          <input id="auc-step-input" class="input" type="number">
+          <input id="auc-step-input" class="input" type="number" placeholder="50000">
         </div>
         <div class="input-group">
           <label class="input-label">Стратегия</label>
@@ -325,7 +326,8 @@
             <option>Ручная</option>
           </select>
         </div>
-        <div class="flex gap-2 mt-2">
+        <button id="auc-save-btn" class="btn btn-secondary btn-full mb-2">💾 Сохранить настройки</button>
+        <div class="flex gap-2">
           <button id="auc-bid-btn" class="btn btn-primary" style="flex:1">Подать ставку</button>
           <button id="auc-stop-btn" class="btn btn-danger">Стоп</button>
         </div>
