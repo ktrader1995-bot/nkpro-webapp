@@ -10,10 +10,6 @@ window.pageInits.profile = async function () {
   setVal('prof-director', data.director);
   setVal('prof-iik',      data.iik);
 
-  // Keywords
-  const kw = Array.isArray(data.keywords) ? data.keywords.join(', ') : (data.keywords || '');
-  setVal('prof-keywords', kw);
-
   // ECP cards
   const ecpEl = document.getElementById('prof-ecp-list');
   if (ecpEl) {
@@ -41,7 +37,6 @@ document.getElementById('prof-save-btn')?.addEventListener('click', async () => 
     name:     document.getElementById('prof-name')?.value     || '',
     director: document.getElementById('prof-director')?.value || '',
     iik:      document.getElementById('prof-iik')?.value      || '',
-    keywords: document.getElementById('prof-keywords')?.value || '',
   };
   const res = await API.saveProfile(body);
   if (res?.ok) {
