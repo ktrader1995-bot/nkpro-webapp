@@ -130,10 +130,13 @@ function showSubmitForm(idx, type, startPrice, suggested) {
       </div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-primary" style="flex:1" onclick="submitLot(${idx}, 'ЗЦП', ${startPrice})">
-          🔐 Подписать ЭЦП и подать
+          🔐 Подать сейчас
         </button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">✕</button>
       </div>
+      <button class="btn btn-secondary btn-full mt-2" onclick="saveForAuto(${idx}, 'ЗЦП', ${startPrice})">
+        ⏳ Сохранить → авто-подача при открытии
+      </button>
     `;
     calcDiscount(idx, startPrice);
 
@@ -166,10 +169,13 @@ function showSubmitForm(idx, type, startPrice, suggested) {
 
       <div class="flex gap-2 mt-3">
         <button class="btn btn-primary" style="flex:1" onclick="submitLot(${idx}, 'Конкурс', ${startPrice})">
-          🔐 Подписать ЭЦП и подать
+          🔐 Подать сейчас
         </button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">✕</button>
       </div>
+      <button class="btn btn-secondary btn-full mt-2" onclick="saveForAuto(${idx}, 'Конкурс', ${startPrice})">
+        ⏳ Сохранить → авто-подача при открытии
+      </button>
     `;
     calcDiscount(idx, startPrice);
     loadDocsChecklist(idx);
@@ -254,6 +260,43 @@ function calcDiscount(idx, startPrice) {
   const pct = (1 - price / startPrice) * 100;
   if (discountEl) discountEl.textContent = pct.toFixed(1) + '%';
   warnEl?.classList.toggle('hidden', pct <= 10);
+}
+
+async function saveForAuto(idx, type, startPrice) {
+  const card  = document.getElementById(`lot-card-${idx}`);
+  const lot   = JSON.parse(card.dataset.lot);
+  const price = parseFloat(document.getElementById(`price-input-${idx}`)?.value);
+
+  if (!price || price <= 0) { NK.toast('Укажите цену', 'error'); return; }
+
+  // Сохранить лот + цену в БД
+  const addRes = await API.addLot({
+    lot_id:        String(lot.lot_id),
+    purchase_type: type,
+    name_ru:       lot.name_ru || '',
+    start_price:   lot.start_price || 0,
+    deadline:      lot.deadline || '',
+    announce_no:   lot.announce_no || '',
+    url:           lot.url || '',
+  });
+
+  // Сохранить цену
+  await API.setZczPrice(String(lot.lot_id), price, type);
+
+  if (addRes?.ok) {
+    NK.toast(`Сохранено! Бот подаст при открытии приёма заявок`, 'success');
+    // Поменять кнопку на статус
+    const btn = card.querySelector(`button[onclick*="saveForAuto"]`);
+    if (btn) {
+      btn.className = 'btn btn-secondary btn-full mt-2';
+      btn.innerHTML = `✅ Сохранено — ${NK.fmt.money(price)} · авто-подача включена`;
+      btn.disabled = true;
+    }
+  } else {
+    // Fallback через бот
+    API.send('save_for_auto', { lot_id: String(lot.lot_id), price, purchase_type: type });
+    NK.toast('Отправлено в бот для сохранения', 'info');
+  }
 }
 
 function submitLot(idx, type, startPrice) {
