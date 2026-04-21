@@ -38,55 +38,210 @@ async function doSearch() {
 function renderResults(lots) {
   resultsEl.innerHTML = '';
 
-  lots.forEach(lot => {
+  lots.forEach((lot, idx) => {
     const card = document.createElement('div');
     card.className = 'card section';
+    card.id = `lot-card-${idx}`;
 
-    const typeMap = {
-      'ЗЦП': 'ЗЦП', 'Аукцион': 'Аукцион', 'Конкурс': 'Конкурс',
-      'Открытый конкурс': 'Конкурс',
-    };
-    const typeLabel = typeMap[lot.purchase_type] || lot.purchase_type || '—';
-    const typeKey   = typeLabel === 'ЗЦП' ? 'ЗЦП' : typeLabel === 'Аукцион' ? 'Аукцион' : 'Конкурс';
+    const suggested = Math.round((lot.start_price || 0) * 0.97);
 
     card.innerHTML = `
       <div class="flex justify-between items-center mb-2">
         <span class="tender-id mono">${lot.lot_id}</span>
-        <span class="badge badge-muted">${typeLabel}</span>
+        <span class="badge badge-accent">${lot.status || '—'}</span>
       </div>
       <div class="tender-name" style="font-size:14px;margin-bottom:10px">${lot.name_ru || 'Без названия'}</div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div class="stat-card" style="padding:10px">
-          <div class="stat-label">Начальная цена</div>
+          <div class="stat-label">Нач. цена</div>
           <div style="font-size:15px;font-weight:700;color:var(--accent)">${NK.fmt.money(lot.start_price)}</div>
         </div>
         <div class="stat-card" style="padding:10px">
           <div class="stat-label">Дедлайн</div>
-          <div style="font-size:15px;font-weight:700">${NK.fmt.date(lot.deadline) || '—'}</div>
+          <div style="font-size:14px;font-weight:700">${NK.fmt.date(lot.deadline) || '—'}</div>
         </div>
       </div>
 
       ${lot.customer_name ? `<div class="text-muted text-sm mb-3">🏢 ${lot.customer_name}</div>` : ''}
-      ${lot.status ? `<div class="mb-3"><span class="badge badge-accent">${lot.status}</span></div>` : ''}
 
       <div class="divider"></div>
 
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-weight:600">ДОБАВИТЬ В СПИСОК:</div>
-      <div class="flex gap-2" style="flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="addLotTo(${JSON.stringify(lot).replace(/"/g,'&quot;')}, 'ЗЦП')">
-          ⚡ ЗЦП
+      <!-- Кнопки выбора типа -->
+      <div id="action-btns-${idx}" class="flex gap-2" style="flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="showSubmitForm(${idx}, 'ЗЦП', ${lot.start_price || 0}, ${suggested})">
+          ⚡ Подать ЗЦП
         </button>
-        <button class="btn btn-secondary btn-sm" onclick="addLotTo(${JSON.stringify(lot).replace(/"/g,'&quot;')}, 'Аукцион')">
+        <button class="btn btn-secondary btn-sm" onclick="showSubmitForm(${idx}, 'Аукцион', ${lot.start_price || 0}, ${Math.round((lot.start_price||0)*0.85)})">
           🔨 Аукцион
         </button>
-        <button class="btn btn-secondary btn-sm" onclick="addLotTo(${JSON.stringify(lot).replace(/"/g,'&quot;')}, 'Конкурс')">
+        <button class="btn btn-secondary btn-sm" onclick="showSubmitForm(${idx}, 'Конкурс', ${lot.start_price || 0}, ${suggested})">
           📄 Конкурс
         </button>
-        ${lot.url ? `<a class="btn btn-ghost btn-sm" href="${lot.url}" target="_blank">🔗 Портал</a>` : ''}
+        ${lot.url ? `<a class="btn btn-ghost btn-sm" href="${lot.url}" target="_blank">🔗</a>` : ''}
+      </div>
+
+      <!-- Форма подачи (скрыта) -->
+      <div id="submit-form-${idx}" class="hidden" style="margin-top:12px">
+        <div class="divider"></div>
+        <div id="submit-form-inner-${idx}"></div>
       </div>
     `;
+
+    // Сохраняем lot в data атрибуте
+    card.dataset.lot = JSON.stringify(lot);
     resultsEl.appendChild(card);
+  });
+}
+
+function showSubmitForm(idx, type, startPrice, suggested) {
+  const formEl    = document.getElementById(`submit-form-${idx}`);
+  const innerEl   = document.getElementById(`submit-form-inner-${idx}`);
+  const card      = document.getElementById(`lot-card-${idx}`);
+  const lot       = JSON.parse(card.dataset.lot);
+
+  // Если уже открыта та же форма — закрыть
+  if (!formEl.classList.contains('hidden') && formEl.dataset.type === type) {
+    formEl.classList.add('hidden');
+    return;
+  }
+
+  formEl.dataset.type = type;
+  formEl.classList.remove('hidden');
+
+  if (type === 'ЗЦП' || type === 'Конкурс') {
+    innerEl.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">
+        ${type === 'ЗЦП' ? '⚡ ПОДАЧА ЗЦП' : '📄 ПОДАЧА КОНКУРС'}
+      </div>
+      <div class="input-group">
+        <label class="input-label">Ваша цена</label>
+        <div class="input-addon">
+          <input class="input" type="number" id="price-input-${idx}"
+            value="${suggested}" placeholder="0"
+            oninput="calcDiscount(${idx}, ${startPrice})">
+          <span class="input-addon-text">₸</span>
+        </div>
+        <div class="tooltip-text" style="margin-top:5px">
+          Снижение: <strong id="discount-${idx}">3.0%</strong>
+          &nbsp;·&nbsp; от нач. цены ${NK.fmt.money(startPrice)}
+        </div>
+      </div>
+      <div id="antidump-${idx}" class="alert alert-warning hidden">
+        ⚠️ Снижение более 10% — потребуется обоснование антидемпинга
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-primary" style="flex:1"
+          onclick="submitLot(${idx}, '${type}', ${startPrice})">
+          🔐 Подписать ЭЦП и подать
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">
+          ✕
+        </button>
+      </div>
+    `;
+    calcDiscount(idx, startPrice);
+
+  } else if (type === 'Аукцион') {
+    const stopPrice = Math.round(startPrice * 0.85);
+    innerEl.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">
+        🔨 НАСТРОЙКА АВТО-ТОРГОВ
+      </div>
+      <div class="input-group">
+        <label class="input-label">Стоп-цена (минимум)</label>
+        <div class="input-addon">
+          <input class="input" type="number" id="stop-input-${idx}" value="${stopPrice}">
+          <span class="input-addon-text">₸</span>
+        </div>
+        <div class="tooltip-text">Снижение от нач. цены: ~15%</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Шаг снижения</label>
+        <div class="input-addon">
+          <input class="input" type="number" id="step-input-${idx}" value="50000">
+          <span class="input-addon-text">₸</span>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Стратегия</label>
+        <select class="input" id="strategy-input-${idx}">
+          <option>Агрессивная (сразу)</option>
+          <option>Выжидательная (последние 30 сек)</option>
+          <option>Ручная</option>
+        </select>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-primary" style="flex:1"
+          onclick="submitAuction(${idx}, ${startPrice})">
+          🔨 Запустить авто-торги
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">
+          ✕
+        </button>
+      </div>
+    `;
+  }
+}
+
+function calcDiscount(idx, startPrice) {
+  const price     = parseFloat(document.getElementById(`price-input-${idx}`)?.value) || 0;
+  const discountEl = document.getElementById(`discount-${idx}`);
+  const warnEl     = document.getElementById(`antidump-${idx}`);
+  if (!startPrice || !price) return;
+  const pct = (1 - price / startPrice) * 100;
+  if (discountEl) discountEl.textContent = pct.toFixed(1) + '%';
+  warnEl?.classList.toggle('hidden', pct <= 10);
+}
+
+function submitLot(idx, type, startPrice) {
+  const card    = document.getElementById(`lot-card-${idx}`);
+  const lot     = JSON.parse(card.dataset.lot);
+  const price   = parseFloat(document.getElementById(`price-input-${idx}`)?.value);
+
+  if (!price || price <= 0) { NK.toast('Укажите цену', 'error'); return; }
+
+  NK.confirm(`Подписать ЭЦП и подать заявку?\n${NK.fmt.money(price)}`, async () => {
+    // Добавить в список и сразу подать
+    await API.addLot({
+      lot_id: String(lot.lot_id),
+      purchase_type: type,
+      name_ru: lot.name_ru || '',
+      start_price: lot.start_price || 0,
+      deadline: lot.deadline || '',
+      announce_no: lot.announce_no || '',
+      url: lot.url || '',
+    });
+
+    const action = type === 'ЗЦП' ? 'submit_zcz' : 'submit_konkurs';
+    API.send(action, { lot_id: String(lot.lot_id), price });
+  });
+}
+
+function submitAuction(idx, startPrice) {
+  const card     = document.getElementById(`lot-card-${idx}`);
+  const lot      = JSON.parse(card.dataset.lot);
+  const stopPrice = parseFloat(document.getElementById(`stop-input-${idx}`)?.value);
+  const step      = parseFloat(document.getElementById(`step-input-${idx}`)?.value) || 50000;
+  const strategy  = document.getElementById(`strategy-input-${idx}`)?.value || '';
+
+  NK.confirm(`Запустить авто-торги?\nСтоп: ${NK.fmt.money(stopPrice)}`, async () => {
+    await API.addLot({
+      lot_id: String(lot.lot_id),
+      purchase_type: 'Аукцион',
+      name_ru: lot.name_ru || '',
+      start_price: lot.start_price || 0,
+      deadline: lot.deadline || '',
+      announce_no: lot.announce_no || '',
+      url: lot.url || '',
+    });
+
+    API.send('auction_setup', {
+      lot_id: String(lot.lot_id),
+      stop_price: stopPrice,
+      step,
+      strategy,
+    });
   });
 }
 
