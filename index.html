@@ -452,6 +452,22 @@
 </div>
 
 <!-- ─── BOTTOM NAV (mobile) ─────────────────────── -->
+<!-- ─── NOTIFICATIONS ────────────────────────────── -->
+<button id="notif-bell" class="notif-bell" onclick="toggleNotifPanel()">
+  🔔
+  <span id="notif-badge" class="notif-badge hidden">0</span>
+</button>
+
+<div id="notif-panel" class="notif-panel hidden">
+  <div class="notif-panel-header">
+    <span class="card-title" style="margin:0">Уведомления</span>
+    <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Прочитать все</button>
+  </div>
+  <div id="notif-list">
+    <div class="text-muted text-sm" style="padding:16px;text-align:center">Загрузка...</div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <button class="bottom-nav-item active" data-page="dashboard">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -529,6 +545,7 @@
 <script src="js/pages/konkurs.js"></script>
 <script src="js/pages/history.js"></script>
 <script src="js/pages/profile.js"></script>
+<script src="js/notifications.js"></script>
 
 <script>
 // ZCZ tab switcher

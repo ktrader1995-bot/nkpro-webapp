@@ -54,6 +54,7 @@ window.API = (() => {
     profile:      ()              => get('/api/profile'),
     saveProfile:  (body)          => post('/api/profile', body),
     konkursLots:  ()              => get('/api/konkurs/lots'),
+    notifications:    ()            => get('/api/notifications'),
     lotDetail:        (lot_id)     => get(`/api/lot/${lot_id}`),
     docs:             ()           => get('/api/docs'),
     searchByAnnounce: (no)        => get('/api/search', { announce_no: no }),
