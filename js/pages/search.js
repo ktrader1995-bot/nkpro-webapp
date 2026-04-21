@@ -78,6 +78,9 @@ function renderResults(lots) {
         <button class="btn btn-secondary btn-sm" onclick="showSubmitForm(${idx}, 'Конкурс', ${lot.start_price || 0}, ${suggested})">
           📄 Конкурс
         </button>
+        <button class="btn btn-ghost btn-sm" onclick="genTechProposal(${idx})" id="ai-btn-${idx}">
+          ✨ ИИ-анализ
+        </button>
         ${lot.url ? `<a class="btn btn-ghost btn-sm" href="${lot.url}" target="_blank">🔗</a>` : ''}
       </div>
 
@@ -375,6 +378,32 @@ async function addLotTo(lot, purchaseType) {
     API.send('add_lot', body);
     NK.toast(`Отправлено в бот → ${purchaseType}`, 'info');
   }
+}
+
+async function genTechProposal(idx) {
+  const card = document.getElementById(`lot-card-${idx}`);
+  const lot  = JSON.parse(card.dataset.lot);
+  const btn  = document.getElementById(`ai-btn-${idx}`);
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Генерирую...';
+
+  // Сначала сохранить лот в БД чтобы бот мог его найти
+  await API.addLot({
+    lot_id:        String(lot.lot_id),
+    purchase_type: 'ЗЦП',
+    name_ru:       lot.name_ru || '',
+    start_price:   lot.start_price || 0,
+    deadline:      lot.deadline || '',
+    announce_no:   lot.announce_no || '',
+    url:           lot.url || '',
+  });
+
+  // Отправить запрос боту — он пришлёт .docx в Telegram
+  API.send('gen_tech_proposal', { lot_id: String(lot.lot_id) });
+
+  NK.toast('ИИ анализирует тендер — документ придёт в Telegram', 'success');
+  btn.textContent = '✅ Отправлено в бот';
 }
 
 function setLoading(on) {
