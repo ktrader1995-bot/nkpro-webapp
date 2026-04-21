@@ -41,25 +41,26 @@ async function loadHistory(filter) {
 }
 
 function renderTable(rows) {
-  const tbody = document.getElementById('hist-table-body');
-  if (!tbody) return;
-  tbody.innerHTML = '';
+  const isMobile = window.innerWidth < 640;
+  isMobile ? renderCards(rows) : renderDesktopTable(rows);
+}
 
+function renderDesktopTable(rows) {
+  const wrap = document.getElementById('hist-table-wrap');
+  const tbody = document.getElementById('hist-table-body');
+  const cards = document.getElementById('hist-cards');
+  if (wrap)  wrap.style.display  = '';
+  if (cards) cards.style.display = 'none';
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">История пуста</td></tr>';
     return;
   }
 
-  const methodMap = { 'Запрос ценовых предложений': 'ЗЦП', 'Аукцион': 'Аукцион', 'Конкурс': 'Конкурс' };
-
   rows.forEach(r => {
-    const method = methodMap[r.method || r.purchase_type] || r.method || '—';
-    const status = r.status;
-    const badgeCls = status === 'won' ? 'badge-success' : status === 'lost' ? 'badge-danger' : 'badge-warning';
-    const badgeText = status === 'won' ? '✓ Победа' : status === 'lost' ? 'Проигрыш' : status === 'submitted' ? 'Подана' : 'Черновик';
-
-    const discountPct = r.discount_pct ? (r.discount_pct * 100).toFixed(1) + '%' : '—';
-
+    const { method, badgeCls, badgeText, discountPct, status } = rowMeta(r);
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
     tr.innerHTML = `
@@ -73,6 +74,56 @@ function renderTable(rows) {
     tr.addEventListener('click', () => openLotModal(r));
     tbody.appendChild(tr);
   });
+}
+
+function renderCards(rows) {
+  const wrap  = document.getElementById('hist-table-wrap');
+  const cards = document.getElementById('hist-cards');
+  if (wrap)  wrap.style.display  = 'none';
+  if (!cards) return;
+  cards.style.display = '';
+  cards.innerHTML = '';
+
+  if (!rows.length) {
+    cards.innerHTML = '<div class="text-muted text-sm" style="text-align:center;padding:24px">История пуста</div>';
+    return;
+  }
+
+  rows.forEach(r => {
+    const { method, badgeCls, badgeText, discountPct, status } = rowMeta(r);
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.cssText = 'margin-bottom:8px;cursor:pointer';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div class="mono" style="font-size:10px;color:var(--text-muted)">${r.lot_id || '—'}</div>
+          <div style="font-size:12px;margin-top:2px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name_ru || '—'}</div>
+        </div>
+        <span class="badge ${badgeCls}">${badgeText}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span class="badge badge-muted" style="margin-right:6px">${method}</span>
+          <span class="font-bold" style="font-size:13px">${NK.fmt.money(r.our_price)}</span>
+        </div>
+        <span class="${status === 'won' ? 'text-success' : 'text-danger'}" style="font-size:12px">${discountPct}</span>
+      </div>
+    `;
+    div.addEventListener('click', () => openLotModal(r));
+    cards.appendChild(div);
+  });
+}
+
+function rowMeta(r) {
+  const methodMap = { 'Запрос ценовых предложений': 'ЗЦП', 'Аукцион': 'Аукцион', 'Конкурс': 'Конкурс' };
+  const status     = r.status || '';
+  const method     = methodMap[r.method || r.purchase_type] || r.method || '—';
+  const badgeCls   = status === 'won' ? 'badge-success' : status === 'lost' ? 'badge-danger' : 'badge-warning';
+  const badgeText  = status === 'won' ? '✓ Победа' : status === 'lost' ? 'Проигрыш' : status === 'submitted' ? 'Подана' : 'Черновик';
+  const discountPct = r.discount_pct ? (r.discount_pct * 100).toFixed(1) + '%'
+    : (r.start_price && r.our_price ? ((1 - r.our_price / r.start_price) * 100).toFixed(1) + '%' : '—');
+  return { method, badgeCls, badgeText, discountPct, status };
 }
 
 // Filters

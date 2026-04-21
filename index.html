@@ -131,7 +131,7 @@
           <div class="live-banner-text">Идёт аукцион</div>
           <div class="text-xs text-muted mt-2">Нажмите для перехода</div>
         </div>
-        <button class="btn btn-danger btn-sm" style="margin-left:auto" data-page="auction">Открыть</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" data-page="auction">🔴 Открыть</button>
       </div>
 
       <!-- AI Tip -->
@@ -236,7 +236,7 @@
           <span class="text-muted text-sm">Доступные тендеры</span>
           <div style="display:flex;gap:6px">
             <button id="zcz-refresh-btn" class="btn btn-ghost btn-sm">↻ Обновить</button>
-            <button id="zcz-select-80" class="btn btn-secondary btn-sm">Выбрать ≥80%</button>
+            <button id="zcz-select-80" class="btn btn-secondary btn-sm">☑ Выбрать ≥80%</button>
           </div>
         </div>
 
@@ -331,8 +331,8 @@
         </div>
         <button id="auc-save-btn" class="btn btn-secondary btn-full mb-2">💾 Сохранить настройки</button>
         <div class="flex gap-2">
-          <button id="auc-bid-btn" class="btn btn-primary" style="flex:1">Подать ставку</button>
-          <button id="auc-stop-btn" class="btn btn-danger">Стоп</button>
+          <button id="auc-bid-btn" class="btn btn-primary" style="flex:1">🔨 Подать ставку</button>
+          <button id="auc-stop-btn" class="btn btn-danger">⏸ Стоп</button>
           <button id="auc-delete-btn" class="btn btn-ghost" style="color:var(--danger)">✕</button>
         </div>
         <div class="text-muted text-xs mt-2">Стоп-цена: <strong id="auc-stop-price">—</strong></div>
@@ -390,23 +390,24 @@
 
       <div class="flex gap-2 mb-3" style="flex-wrap:wrap;margin-top:14px">
         <button class="btn btn-secondary btn-sm hist-filter-btn active" data-filter="all">Все</button>
-        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="win">Победы</button>
-        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="loss">Проигрыши</button>
-        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="active">В процессе</button>
-        <button id="hist-export-btn" class="btn btn-secondary btn-sm" style="margin-left:auto">↓ Excel</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="win">🏆 Победы</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="loss">❌ Проигрыши</button>
+        <button class="btn btn-secondary btn-sm hist-filter-btn" data-filter="active">⏳ В процессе</button>
+        <button id="hist-export-btn" class="btn btn-secondary btn-sm" style="margin-left:auto">📥 Excel</button>
       </div>
 
-      <div class="table-wrap section">
+      <div id="hist-table-wrap" class="table-wrap section">
         <table>
           <thead>
             <tr>
               <th>Тендер</th><th>Способ</th><th>Наша цена</th>
-              <th>Победитель</th><th>Разрыв</th><th>Итог</th>
+              <th>Нач. цена</th><th>Разрыв</th><th>Итог</th>
             </tr>
           </thead>
           <tbody id="hist-table-body"></tbody>
         </table>
       </div>
+      <div id="hist-cards" style="display:none"></div>
 
       <div class="card section">
         <div class="card-title">Топ конкурентов</div>
@@ -449,7 +450,7 @@
         </button>
       </div>
 
-      <button id="prof-save-btn" class="btn btn-primary btn-full">Сохранить</button>
+      <button id="prof-save-btn" class="btn btn-primary btn-full">💾 Сохранить</button>
     </div>
 
   </main>
@@ -465,7 +466,7 @@
 <div id="notif-panel" class="notif-panel hidden">
   <div class="notif-panel-header">
     <span class="card-title" style="margin:0">Уведомления</span>
-    <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Прочитать все</button>
+    <button class="btn btn-ghost btn-sm" onclick="markAllRead()">✓ Прочитать все</button>
   </div>
   <div id="notif-list">
     <div class="text-muted text-sm" style="padding:16px;text-align:center">Загрузка...</div>
