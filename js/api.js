@@ -54,6 +54,14 @@ window.API = (() => {
     profile:      ()              => get('/api/profile'),
     saveProfile:  (body)          => post('/api/profile', body),
     konkursLots:  ()              => get('/api/konkurs/lots'),
+    deleteLot:        (lot_id, purchase_type) => {
+      const url = new URL((window.WEBAPP_API_URL || 'http://localhost:8000') + `/api/lot/${lot_id}`);
+      if (purchase_type) url.searchParams.set('purchase_type', purchase_type);
+      return fetch(url, {
+        method: 'DELETE',
+        headers: { 'X-Init-Data': window.Telegram?.WebApp?.initData || '', 'ngrok-skip-browser-warning': 'true' },
+      }).then(r => r.ok ? { ok: true } : null).catch(() => null);
+    },
     notifications:    ()            => get('/api/notifications'),
     lotDetail:        (lot_id)     => get(`/api/lot/${lot_id}`),
     docs:             ()           => get('/api/docs'),

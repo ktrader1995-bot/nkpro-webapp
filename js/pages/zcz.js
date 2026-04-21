@@ -85,7 +85,11 @@ async function renderBatchLots() {
         <div style="flex:1;min-width:0">
           <div class="flex justify-between items-center">
             <span class="tender-id mono" style="font-size:10px">${lot.lot_id}</span>
-            ${lot.auto_submitted ? '<span class="badge badge-success">Подан</span>' : lot.our_price ? '<span class="badge badge-accent">Цена ✓</span>' : '<span class="badge badge-muted">Нет цены</span>'}
+            <div style="display:flex;gap:6px;align-items:center">
+              ${lot.auto_submitted ? '<span class="badge badge-success">Подан</span>' : lot.our_price ? '<span class="badge badge-accent">Цена ✓</span>' : '<span class="badge badge-muted">Нет цены</span>'}
+              <button class="btn btn-ghost btn-sm" style="padding:2px 6px;color:var(--danger)"
+                onclick="deleteLot('${lot.lot_id}', 'ЗЦП', this)">✕</button>
+            </div>
           </div>
           <div class="tender-name" style="font-size:12.5px;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lot.name_ru || 'Без названия'}</div>
           <div class="tender-meta mb-2">
@@ -145,6 +149,18 @@ document.getElementById('zcz-batch-submit')?.addEventListener('click', () => {
     showProgress(selected);
   });
 });
+
+async function deleteLot(lotId, purchaseType, btn) {
+  NK.confirm(`Удалить лот ${lotId} из списка?`, async () => {
+    const res = await API.deleteLot(lotId, purchaseType);
+    if (res?.ok) {
+      btn.closest('.card').remove();
+      NK.toast('Лот удалён', 'success');
+    } else {
+      NK.toast('Ошибка удаления', 'error');
+    }
+  });
+}
 
 function showProgress(selectedLots) {
   const wrap = document.getElementById('zcz-progress-wrap');

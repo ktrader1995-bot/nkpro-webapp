@@ -59,7 +59,11 @@ function renderKonLot(lot, container) {
   const inputVal   = lot.our_price   ? Math.round(lot.our_price)      : '';
 
   card.innerHTML = `
-    <div class="tender-id mono">${lot.lot_id}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="tender-id mono">${lot.lot_id}</div>
+      <button class="btn btn-ghost btn-sm" style="padding:2px 6px;color:var(--danger)"
+        onclick="deleteKonLot('${lot.lot_id}', this)">✕</button>
+    </div>
     <div class="tender-name" style="margin:6px 0 4px">${lot.name_ru || 'Без названия'}</div>
     <div class="tender-meta">
       <span class="tender-price">${startPrice}</span>
@@ -121,5 +125,17 @@ function renderKonLot(lot, container) {
         NK.toast('Отправлено в бот', 'success');
       }
     });
+  });
+}
+
+async function deleteKonLot(lotId, btn) {
+  NK.confirm(`Удалить лот ${lotId} из списка?`, async () => {
+    const res = await API.deleteLot(lotId, 'Конкурс');
+    if (res?.ok) {
+      btn.closest('.card').remove();
+      NK.toast('Лот удалён', 'success');
+    } else {
+      NK.toast('Ошибка удаления', 'error');
+    }
   });
 }

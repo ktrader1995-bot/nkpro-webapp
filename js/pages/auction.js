@@ -135,6 +135,21 @@ document.getElementById('auc-save-btn')?.addEventListener('click', () => {
   NK.toast('Настройки сохранены в бот', 'success');
 });
 
+// ── Кнопка: Удалить лот из аукциона ──────────────────────────
+document.getElementById('auc-delete-btn')?.addEventListener('click', () => {
+  if (!_auctionLotId) { NK.toast('Нет активного лота', 'error'); return; }
+  NK.confirm(`Удалить лот ${_auctionLotId} из аукциона?`, async () => {
+    const res = await API.deleteLot(_auctionLotId, 'Аукцион');
+    if (res?.ok) {
+      _auctionLotId = '';
+      NK.toast('Лот удалён', 'success');
+      await loadAuction();
+    } else {
+      NK.toast('Ошибка удаления', 'error');
+    }
+  });
+});
+
 // ── Живое обновление метки стоп-цены ─────────────────────────
 document.getElementById('auc-stop-input')?.addEventListener('input', function () {
   const el = document.getElementById('auc-stop-price');
