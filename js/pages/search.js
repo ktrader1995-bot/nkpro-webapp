@@ -109,11 +109,9 @@ function showSubmitForm(idx, type, startPrice, suggested) {
   formEl.dataset.type = type;
   formEl.classList.remove('hidden');
 
-  if (type === 'ЗЦП' || type === 'Конкурс') {
+  if (type === 'ЗЦП') {
     innerEl.innerHTML = `
-      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">
-        ${type === 'ЗЦП' ? '⚡ ПОДАЧА ЗЦП' : '📄 ПОДАЧА КОНКУРС'}
-      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">⚡ ПОДАЧА ЗЦП</div>
       <div class="input-group">
         <label class="input-label">Ваша цена</label>
         <div class="input-addon">
@@ -131,16 +129,50 @@ function showSubmitForm(idx, type, startPrice, suggested) {
         ⚠️ Снижение более 10% — потребуется обоснование антидемпинга
       </div>
       <div class="flex gap-2 mt-2">
-        <button class="btn btn-primary" style="flex:1"
-          onclick="submitLot(${idx}, '${type}', ${startPrice})">
+        <button class="btn btn-primary" style="flex:1" onclick="submitLot(${idx}, 'ЗЦП', ${startPrice})">
           🔐 Подписать ЭЦП и подать
         </button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">
-          ✕
-        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">✕</button>
       </div>
     `;
     calcDiscount(idx, startPrice);
+
+  } else if (type === 'Конкурс') {
+    innerEl.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:10px">📄 ПОДАЧА КОНКУРС</div>
+
+      <div class="input-group">
+        <label class="input-label">Ваша цена</label>
+        <div class="input-addon">
+          <input class="input" type="number" id="price-input-${idx}"
+            value="${suggested}" placeholder="0"
+            oninput="calcDiscount(${idx}, ${startPrice})">
+          <span class="input-addon-text">₸</span>
+        </div>
+        <div class="tooltip-text" style="margin-top:5px">
+          Снижение: <strong id="discount-${idx}">3.0%</strong>
+          &nbsp;·&nbsp; от нач. цены ${NK.fmt.money(startPrice)}
+        </div>
+      </div>
+
+      <div id="antidump-${idx}" class="alert alert-warning hidden">
+        ⚠️ Снижение более 10% — потребуется обоснование антидемпинга
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin:10px 0 6px">ДОКУМЕНТЫ КОМПАНИИ</div>
+      <div id="docs-list-${idx}">
+        <div class="text-muted text-sm">Загрузка...</div>
+      </div>
+
+      <div class="flex gap-2 mt-3">
+        <button class="btn btn-primary" style="flex:1" onclick="submitLot(${idx}, 'Конкурс', ${startPrice})">
+          🔐 Подписать ЭЦП и подать
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('submit-form-${idx}').classList.add('hidden')">✕</button>
+      </div>
+    `;
+    calcDiscount(idx, startPrice);
+    loadDocsChecklist(idx);
 
   } else if (type === 'Аукцион') {
     const stopPrice = Math.round(startPrice * 0.85);
@@ -182,6 +214,36 @@ function showSubmitForm(idx, type, startPrice, suggested) {
       </div>
     `;
   }
+}
+
+async function loadDocsChecklist(idx) {
+  const el = document.getElementById(`docs-list-${idx}`);
+  if (!el) return;
+
+  const docs = await API.docs();
+  if (!docs || !docs.length) {
+    el.innerHTML = `
+      <div class="alert alert-warning">
+        ⚠️ Документы не загружены.<br>
+        <small>Добавьте документы компании через бот (⚙️ Настройки → Документы)</small>
+      </div>`;
+    return;
+  }
+
+  // Обязательные документы для конкурса
+  const required = ['Устав', 'Регистрация', 'Справка', 'Техпредложение', 'Ценовое'];
+  const uploaded = docs.map(d => d.name);
+
+  el.innerHTML = `<ul class="checklist" style="margin-bottom:8px">` +
+    docs.map(d => `
+      <li class="checklist-item">
+        <div class="check-icon done">✓</div>
+        <span style="font-size:12px">${d.name}</span>
+        <span class="badge badge-success" style="margin-left:auto;font-size:10px">Готово</span>
+      </li>
+    `).join('') +
+  `</ul>
+  <div class="tooltip-text">Загружено ${docs.length} документ(ов). Добавить ещё — через бот.</div>`;
 }
 
 function calcDiscount(idx, startPrice) {
