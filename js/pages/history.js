@@ -82,8 +82,30 @@ document.querySelectorAll('.hist-filter-btn')?.forEach(btn => {
   });
 });
 
-// Export
-document.getElementById('hist-export-btn')?.addEventListener('click', () => {
-  API.send('export_history', {});
-  NK.toast('Запрос на экспорт отправлен в бот', 'info');
+// Export — direct download from server
+document.getElementById('hist-export-btn')?.addEventListener('click', async () => {
+  NK.toast('Генерирую Excel...', 'info');
+  try {
+    const BASE = window.WEBAPP_API_URL || 'http://localhost:8000';
+    const res = await fetch(BASE + '/api/export', {
+      headers: {
+        'X-Init-Data': window.Telegram?.WebApp?.initData || '',
+        'ngrok-skip-browser-warning': 'true',
+      }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '');
+    a.href = url;
+    a.download = `nkpro_report_${now}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    NK.toast('Excel скачан!', 'success');
+  } catch (e) {
+    // Fallback — через бот
+    API.send('export_history', {});
+    NK.toast('Файл будет отправлен в Telegram', 'info');
+  }
 });
