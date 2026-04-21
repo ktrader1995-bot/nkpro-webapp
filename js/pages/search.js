@@ -17,14 +17,20 @@ async function doSearch() {
   const lots = await API.searchByAnnounce(val);
   setLoading(false);
 
-  // Показываем RAW ответ для отладки
-  resultsEl.innerHTML = `<div class="card" style="word-break:break-all;font-size:11px;font-family:monospace;padding:12px">
-    <div style="color:var(--text-muted);margin-bottom:4px">Ответ сервера:</div>
-    ${JSON.stringify(lots)}
-  </div>`;
+  if (!lots) {
+    resultsEl.innerHTML = `<div class="alert alert-danger">Ошибка соединения с сервером.<br><small>Проверьте что webapp_server.py запущен</small></div>`;
+    return;
+  }
 
-  if (!lots) return;
-  if (!Array.isArray(lots) || lots.length === 0) return;
+  if (!Array.isArray(lots) || lots.length === 0) {
+    resultsEl.innerHTML = `
+      <div style="text-align:center;padding:32px 0">
+        <div style="font-size:32px;margin-bottom:12px">🔍</div>
+        <div class="section-title">Ничего не найдено</div>
+        <div class="text-muted text-sm mt-2">Номер: <strong>${val}</strong></div>
+      </div>`;
+    return;
+  }
 
   renderResults(lots);
 }
