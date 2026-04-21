@@ -1,8 +1,18 @@
 window.pageInits = window.pageInits || {};
 
 window.pageInits.zcz = async function () {
-  await renderBatchLots();
+  await Promise.all([loadProfile(), renderBatchLots()]);
 };
+
+// ── Загрузка профиля в одиночную форму ───────────────────────
+async function loadProfile() {
+  const data = await API.profile();
+  if (!data) return;
+  const binEl  = document.getElementById('zcz-profile-bin');
+  const nameEl = document.getElementById('zcz-profile-name');
+  if (binEl  && data.bin)  binEl.value  = data.bin;
+  if (nameEl && data.name) nameEl.value = data.name;
+}
 
 // ── Single ────────────────────────────────────────────────────
 const priceInput = document.getElementById('zcz-price');
@@ -11,14 +21,28 @@ const discountEl = document.getElementById('zcz-discount');
 const warnEl     = document.getElementById('zcz-antidump');
 
 priceInput?.addEventListener('input', updateDiscount);
-startInput?.addEventListener('input', updateDiscount);
+
+startInput?.addEventListener('input', () => {
+  const start = parseFloat(startInput?.value) || 0;
+  // авто-подставить 97% если цена ещё не введена
+  if (start && priceInput && !priceInput.value) {
+    priceInput.value = Math.round(start * 0.97);
+  }
+  updateDiscount();
+});
 
 function updateDiscount() {
   const start = parseFloat(startInput?.value) || 0;
   const price = parseFloat(priceInput?.value) || 0;
-  if (!start || !price) { if (discountEl) discountEl.textContent = '—'; return; }
+  if (!start || !price) {
+    if (discountEl) { discountEl.textContent = '—'; discountEl.style.color = ''; }
+    return;
+  }
   const pct = (1 - price / start) * 100;
-  if (discountEl) discountEl.textContent = pct.toFixed(1) + '%';
+  if (discountEl) {
+    discountEl.textContent = pct.toFixed(1) + '%';
+    discountEl.style.color = pct > 10 ? 'var(--danger)' : pct > 5 ? 'var(--warning, #f59e0b)' : 'var(--success)';
+  }
   warnEl?.classList.toggle('hidden', pct <= 10);
 }
 
@@ -72,14 +96,28 @@ async function renderBatchLots() {
             <input class="input" type="number" id="batch-price-${lot.lot_id}"
               placeholder="Ваша цена" value="${suggested || ''}"
               style="font-size:13px;padding:8px 44px 8px 12px"
+              oninput="updateBatchDiscount('${lot.lot_id}', ${lot.start_price || 0})"
               onchange="saveLotPrice('${lot.lot_id}', this.value)">
             <span class="input-addon-text">₸</span>
           </div>
+          <div class="tooltip-text" id="batch-discount-${lot.lot_id}" style="margin-top:4px"></div>
         </div>
       </div>
     `;
     container.appendChild(item);
+    // Показать начальный % снижения если цена уже есть
+    if (suggested && lot.start_price) updateBatchDiscount(lot.lot_id, lot.start_price);
   });
+}
+
+function updateBatchDiscount(lotId, startPrice) {
+  const price = parseFloat(document.getElementById(`batch-price-${lotId}`)?.value) || 0;
+  const el    = document.getElementById(`batch-discount-${lotId}`);
+  if (!el) return;
+  if (!startPrice || !price) { el.textContent = ''; return; }
+  const pct = (1 - price / startPrice) * 100;
+  el.textContent = `Снижение: ${pct.toFixed(1)}%${pct > 10 ? ' ⚠️' : ''}`;
+  el.style.color = pct > 10 ? 'var(--danger)' : pct > 5 ? 'var(--warning, #f59e0b)' : 'var(--success)';
 }
 
 async function saveLotPrice(lotId, price) {
