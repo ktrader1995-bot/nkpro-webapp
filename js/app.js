@@ -105,5 +105,69 @@ toastStyle.textContent = `
 `;
 document.head.appendChild(toastStyle);
 
+// ── Pull-to-refresh ──────────────────────────────────────────
+(function () {
+  const THRESHOLD = 65;
+  let startY = 0;
+  let pulling = false;
+  let indicator = null;
+
+  function getIndicator() {
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'ptr-indicator';
+      indicator.textContent = '↓ Потяните для обновления';
+      document.body.appendChild(indicator);
+    }
+    return indicator;
+  }
+
+  document.addEventListener('touchstart', e => {
+    const scroller = document.querySelector('.page.active');
+    if (scroller?.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { pulling = false; return; }
+    const ind = getIndicator();
+    const pct = Math.min(dy / THRESHOLD, 1);
+    ind.style.opacity = pct;
+    ind.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.4, 24)}px)`;
+    ind.textContent = dy >= THRESHOLD ? '↑ Отпустите' : '↓ Потяните для обновления';
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    const ind = getIndicator();
+    ind.style.opacity = 0;
+    ind.style.transform = 'translateX(-50%) translateY(0)';
+    if (dy >= THRESHOLD && window.pageInits?.[_currentPage]) {
+      NK.toast('Обновление...', 'info');
+      window.pageInits[_currentPage]();
+    }
+  }, { passive: true });
+
+  // CSS для индикатора
+  const s = document.createElement('style');
+  s.textContent = `
+    #ptr-indicator {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-card, #1c1e25); border: 1px solid var(--border, #2a2e38);
+      color: var(--text-secondary, #8b8fa8); padding: 6px 16px;
+      border-radius: 100px; font-size: 12px; font-weight: 600;
+      z-index: 9998; opacity: 0; pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
 // ── Init ─────────────────────────────────────────────────────
 navigateTo('dashboard');
