@@ -340,56 +340,19 @@
         <div class="subtitle">Конкурсные закупки</div>
       </div>
 
+      <!-- Docs checklist -->
       <div class="card section">
-        <div class="tender-id mono" id="kon-lot-id"></div>
-        <div class="tender-name" id="kon-lot-name" style="margin:6px 0"></div>
-        <div class="tender-meta">
-          <span class="tender-price" id="kon-lot-price">—</span>
-          <span class="text-muted">до <span id="kon-lot-deadline">—</span></span>
-        </div>
+        <div class="card-title">Документы компании</div>
+        <ul class="checklist" id="kon-docs-list"></ul>
       </div>
 
-      <div class="card section">
-        <div class="card-title">ИИ-анализ</div>
-        <div class="flex items-center gap-3 mb-3">
-          <div>
-            <div class="stat-label">Шанс победы</div>
-            <div class="stat-value" id="kon-ai-chance">—</div>
-          </div>
-          <div style="flex:1">
-            <div style="font-size:13px;line-height:1.5" id="kon-ai-comment"></div>
-          </div>
+      <!-- Lots list -->
+      <div class="card-title" style="padding:0 4px 8px">Лоты в работе</div>
+      <div id="kon-lots-list">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div>Загрузка...</div>
         </div>
-        <div class="alert alert-info">
-          💡 Рекомендуемая цена: <strong id="kon-ai-price">—</strong>
-        </div>
-      </div>
-
-      <div class="card section">
-        <div class="card-title">Критерии оценки</div>
-        <div id="kon-criteria"></div>
-      </div>
-
-      <div class="card section">
-        <div class="card-title">Документы</div>
-        <ul class="checklist" id="kon-docs"></ul>
-        <button id="kon-gen-btn" class="btn btn-secondary btn-full mt-3">
-          ✨ Сгенерировать техпредложение (ИИ)
-        </button>
-      </div>
-
-      <div class="card section">
-        <div class="card-title">Подача заявки</div>
-        <div class="input-group">
-          <label class="input-label">Ваша цена (₸)</label>
-          <div class="input-addon">
-            <input id="kon-price-input" class="input" type="number">
-            <span class="input-addon-text">₸</span>
-          </div>
-        </div>
-        <button id="kon-submit-btn" class="btn btn-primary btn-full">
-          🔐 Подписать ЭЦП и подать
-        </button>
       </div>
     </div>
 

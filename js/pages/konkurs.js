@@ -1,72 +1,125 @@
 window.pageInits = window.pageInits || {};
 
-window.pageInits.konkurs = function () {
-  const data = API.getMock('konkurs');
-  if (!data) return;
+window.pageInits.konkurs = async function () {
+  await Promise.all([loadDocs(), loadLots()]);
+};
 
-  const { lot, ai, criteria, docs } = data;
-
-  // Lot info
-  document.getElementById('kon-lot-name').textContent    = lot.name;
-  document.getElementById('kon-lot-id').textContent      = lot.id;
-  document.getElementById('kon-lot-price').textContent   = NK.fmt.money(lot.price);
-  document.getElementById('kon-lot-deadline').textContent = NK.fmt.date(lot.deadline);
-
-  // AI analysis
-  const chanceEl = document.getElementById('kon-ai-chance');
-  chanceEl.textContent = ai.win_chance + '%';
-  chanceEl.className = 'stat-value ' + (ai.win_chance >= 60 ? 'success' : ai.win_chance >= 40 ? 'accent' : 'danger');
-
-  document.getElementById('kon-ai-comment').textContent = ai.comment;
-  document.getElementById('kon-ai-price').textContent   = NK.fmt.money(ai.price_rec);
-  document.getElementById('kon-price-input').value      = ai.price_rec;
-
-  // Criteria bars
-  const critEl = document.getElementById('kon-criteria');
-  critEl.innerHTML = '';
-  criteria.forEach(c => {
-    const div = document.createElement('div');
-    div.className = 'progress-wrap';
-    div.innerHTML = `
-      <div class="progress-header">
-        <span class="progress-label">${c.name} <span class="text-muted">(вес ${c.weight}%)</span></span>
-        <span class="progress-pct ${c.our_score >= 70 ? 'text-success' : 'text-warning'}">${c.our_score}/100</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill ${c.our_score >= 70 ? 'success' : ''}" style="width:${c.our_score}%"></div>
-      </div>
-    `;
-    critEl.appendChild(div);
-  });
-
-  // Docs checklist
-  const docsEl = document.getElementById('kon-docs');
-  docsEl.innerHTML = '';
+async function loadDocs() {
+  const el = document.getElementById('kon-docs-list');
+  if (!el) return;
+  const docs = await API.docs();
+  if (!docs || !docs.length) {
+    el.innerHTML = '<li class="checklist-item"><span class="text-muted">Документы не загружены</span></li>';
+    return;
+  }
+  el.innerHTML = '';
   docs.forEach(d => {
     const li = document.createElement('li');
     li.className = 'checklist-item';
     li.innerHTML = `
-      <div class="check-icon ${d.done ? 'done' : 'todo'}">${d.done ? '✓' : '○'}</div>
-      <span style="${d.done ? '' : 'color:var(--text-secondary)'}">${d.name}</span>
-      ${d.done ? '<span class="badge badge-success" style="margin-left:auto">Готово</span>' : '<button class="btn btn-ghost btn-sm" style="margin-left:auto">Загрузить</button>'}
+      <div class="check-icon done">✓</div>
+      <div style="flex:1">
+        <div style="font-size:13px">${d.name}</div>
+        <div class="text-muted text-xs">${d.category || ''}</div>
+      </div>
+      <span class="badge badge-success">Готово</span>
     `;
-    docsEl.appendChild(li);
+    el.appendChild(li);
   });
-};
+}
 
-// Generate proposal
-document.getElementById('kon-gen-btn')?.addEventListener('click', () => {
-  NK.toast('ИИ генерирует техпредложение...', 'info');
-  setTimeout(() => NK.toast('Готово! Документ создан', 'success'), 2000);
-  NK.send('gen_tech_proposal', {});
-});
+async function loadLots() {
+  const el = document.getElementById('kon-lots-list');
+  if (!el) return;
 
-// Submit
-document.getElementById('kon-submit-btn')?.addEventListener('click', () => {
-  const price = parseFloat(document.getElementById('kon-price-input')?.value);
-  if (!price) { NK.toast('Укажите цену', 'error'); return; }
-  NK.confirm('Подписать ЭЦП и подать заявку на конкурс?', () => {
-    NK.send('submit_konkurs', { lot_id: 'KON-2025-438710', price });
-    NK.toast('Заявка подана!', 'success');
+  const lots = await API.konkursLots();
+  if (!lots || !lots.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div>Нет конкурсных лотов</div>
+        <div class="text-muted text-xs mt-2">Найдите тендер через Поиск и добавьте его</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = '';
+  lots.forEach(lot => renderKonLot(lot, el));
+}
+
+function renderKonLot(lot, container) {
+  const card = document.createElement('div');
+  card.className = 'card section';
+  card.dataset.lotId = lot.lot_id;
+
+  const startPrice = lot.start_price ? NK.fmt.money(lot.start_price) : '—';
+  const ourPrice   = lot.our_price   ? NK.fmt.money(lot.our_price)   : '';
+  const deadline   = lot.deadline    ? NK.fmt.date(lot.deadline)      : '—';
+  const inputVal   = lot.our_price   ? Math.round(lot.our_price)      : '';
+
+  card.innerHTML = `
+    <div class="tender-id mono">${lot.lot_id}</div>
+    <div class="tender-name" style="margin:6px 0 4px">${lot.name_ru || 'Без названия'}</div>
+    <div class="tender-meta">
+      <span class="tender-price">${startPrice}</span>
+      <span class="text-muted">до ${deadline}</span>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:flex-end">
+      <div class="input-group" style="flex:1;margin:0">
+        <label class="input-label">Цена заявки (₸)</label>
+        <input class="input kon-price-field" type="number" value="${inputVal}"
+          placeholder="${lot.start_price ? Math.round(lot.start_price * 0.97) : ''}">
+      </div>
+    </div>
+
+    <div id="kon-discount-${lot.lot_id}" class="tooltip-text" style="margin-top:4px"></div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-secondary kon-gen-btn" style="flex:1">
+        ✨ Техпредложение
+      </button>
+      <button class="btn btn-primary kon-submit-btn" style="flex:1">
+        🔐 Подать
+      </button>
+    </div>
+
+    <div id="kon-auto-info-${lot.lot_id}" class="alert alert-info" style="display:none;margin-top:8px">
+      ⏳ Авто-подача настроена
+    </div>
+  `;
+
+  container.appendChild(card);
+
+  const priceInput = card.querySelector('.kon-price-field');
+  const discountEl = card.querySelector(`#kon-discount-${lot.lot_id}`);
+
+  priceInput.addEventListener('input', () => {
+    const price = parseFloat(priceInput.value);
+    if (!lot.start_price || !price) { discountEl.textContent = ''; return; }
+    const pct = ((lot.start_price - price) / lot.start_price * 100).toFixed(1);
+    discountEl.textContent = `Снижение: ${pct}%` + (pct > 25 ? ' ⚠️ Слишком большое!' : '');
+    discountEl.style.color = pct > 25 ? 'var(--danger)' : 'var(--text-secondary)';
   });
-});
+
+  card.querySelector('.kon-gen-btn').addEventListener('click', () => {
+    NK.toast('ИИ генерирует техпредложение...', 'info');
+    API.send('gen_tech_proposal', { lot_id: lot.lot_id });
+  });
+
+  card.querySelector('.kon-submit-btn').addEventListener('click', () => {
+    const price = parseFloat(priceInput.value);
+    if (!price) { NK.toast('Укажите цену', 'error'); return; }
+    NK.confirm(`Подать конкурсную заявку по лоту ${lot.lot_id}?`, async () => {
+      const res = await API.setZczPrice(lot.lot_id, price, 'Конкурс');
+      if (res?.ok) {
+        NK.toast('Цена сохранена. Бот подаст заявку автоматически.', 'success');
+        card.querySelector(`#kon-auto-info-${lot.lot_id}`).style.display = 'block';
+      } else {
+        API.send('submit_konkurs', { lot_id: lot.lot_id, price });
+        NK.toast('Отправлено в бот', 'success');
+      }
+    });
+  });
+}
