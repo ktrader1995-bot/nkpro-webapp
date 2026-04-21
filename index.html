@@ -493,6 +493,33 @@
   </button>
 </nav>
 
+<!-- ─── LOT DETAIL MODAL ──────────────────────────── -->
+<div id="lot-modal" class="modal-overlay hidden" onclick="closeLotModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div>
+        <div class="tender-id mono" id="modal-lot-id"></div>
+        <div class="tender-name" id="modal-lot-name" style="margin-top:4px"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeLotModal()">✕</button>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="modal-badges"></div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" id="modal-stats"></div>
+
+    <div id="modal-auction-section" class="hidden">
+      <div class="card-title">Журнал аукциона</div>
+      <div class="auction-log" id="modal-auction-log" style="max-height:180px"></div>
+    </div>
+
+    <div id="modal-apps-section" class="hidden">
+      <div class="card-title" style="margin-top:12px">Заявки</div>
+      <div id="modal-apps-list"></div>
+    </div>
+  </div>
+</div>
+
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 <script src="js/pages/dashboard.js"></script>

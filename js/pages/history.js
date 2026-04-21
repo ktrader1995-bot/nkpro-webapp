@@ -61,6 +61,7 @@ function renderTable(rows) {
     const discountPct = r.discount_pct ? (r.discount_pct * 100).toFixed(1) + '%' : '—';
 
     const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
     tr.innerHTML = `
       <td class="mono" style="font-size:10px">${r.lot_id || '—'}</td>
       <td><span class="badge badge-muted">${method}</span></td>
@@ -69,6 +70,7 @@ function renderTable(rows) {
       <td class="${status === 'won' ? 'text-success' : 'text-danger'}">${discountPct}</td>
       <td><span class="badge ${badgeCls}">${badgeText}</span></td>
     `;
+    tr.addEventListener('click', () => openLotModal(r));
     tbody.appendChild(tr);
   });
 }
@@ -109,3 +111,93 @@ document.getElementById('hist-export-btn')?.addEventListener('click', async () =
     NK.toast('Файл будет отправлен в Telegram', 'info');
   }
 });
+
+// ── Lot detail modal ─────────────────────────────────────────
+async function openLotModal(row) {
+  const modal = document.getElementById('lot-modal');
+  if (!modal) return;
+
+  document.getElementById('modal-lot-id').textContent   = row.lot_id || '—';
+  document.getElementById('modal-lot-name').textContent = row.name_ru || row.lot_id || '—';
+
+  // Badges
+  const status    = row.status || '';
+  const badgeCls  = status === 'won' ? 'badge-success' : status === 'lost' ? 'badge-danger' : 'badge-warning';
+  const badgeText = status === 'won' ? '✓ Победа' : status === 'lost' ? 'Проигрыш' : status === 'submitted' ? 'Подана' : 'Черновик';
+  const method    = row.method || row.purchase_type || '—';
+  document.getElementById('modal-badges').innerHTML = `
+    <span class="badge ${badgeCls}">${badgeText}</span>
+    <span class="badge badge-muted">${method}</span>
+  `;
+
+  // Stats
+  const disc = row.start_price && row.our_price
+    ? ((1 - row.our_price / row.start_price) * 100).toFixed(1) + '%' : '—';
+  document.getElementById('modal-stats').innerHTML = `
+    <div class="stat-card" style="padding:10px">
+      <div class="stat-label">Нач. цена</div>
+      <div style="font-weight:700;font-size:13px">${NK.fmt.money(row.start_price)}</div>
+    </div>
+    <div class="stat-card" style="padding:10px">
+      <div class="stat-label">Наша цена</div>
+      <div style="font-weight:700;font-size:13px;color:var(--accent)">${NK.fmt.money(row.our_price)}</div>
+    </div>
+    <div class="stat-card" style="padding:10px">
+      <div class="stat-label">Снижение</div>
+      <div style="font-weight:700;font-size:13px">${disc}</div>
+    </div>
+  `;
+
+  // Clear dynamic sections
+  document.getElementById('modal-auction-section').classList.add('hidden');
+  document.getElementById('modal-apps-section').classList.add('hidden');
+
+  modal.classList.remove('hidden');
+
+  // Load details from server
+  const detail = await API.lotDetail(row.lot_id);
+  if (!detail) return;
+
+  // Auction log
+  if (detail.auction_log?.length) {
+    const logEl = document.getElementById('modal-auction-log');
+    logEl.innerHTML = '';
+    detail.auction_log.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'log-entry ' + (e.is_ours ? 'ours' : 'theirs');
+      const time = (e.ts || '').slice(11, 19);
+      div.innerHTML = `
+        <span class="mono" style="font-size:11px;opacity:0.6">${time}</span>
+        <span>${e.bidder || '—'}</span>
+        <span class="font-bold">${NK.fmt.money(e.price)}</span>
+      `;
+      logEl.appendChild(div);
+    });
+    document.getElementById('modal-auction-section').classList.remove('hidden');
+  }
+
+  // Applications list
+  if (detail.applications?.length) {
+    const appsEl = document.getElementById('modal-apps-list');
+    appsEl.innerHTML = '';
+    detail.applications.forEach(a => {
+      const s = a.status || '';
+      const cls = s === 'won' ? 'badge-success' : s === 'lost' ? 'badge-danger' : 'badge-warning';
+      const txt = s === 'won' ? 'Победа' : s === 'lost' ? 'Проигрыш' : s === 'submitted' ? 'Подана' : s;
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px';
+      div.innerHTML = `
+        <span class="text-muted">${(a.created_at || '').slice(0, 10)}</span>
+        <span>${NK.fmt.money(a.our_price)}</span>
+        <span class="badge ${cls}">${txt}</span>
+      `;
+      appsEl.appendChild(div);
+    });
+    document.getElementById('modal-apps-section').classList.remove('hidden');
+  }
+}
+
+function closeLotModal(event) {
+  if (event && event.target !== document.getElementById('lot-modal')) return;
+  document.getElementById('lot-modal')?.classList.add('hidden');
+}
