@@ -74,44 +74,65 @@ async function renderBatchLots() {
     return;
   }
 
-  _batchLots.forEach(lot => {
-    const item = document.createElement('div');
-    item.className = 'card';
-    item.style.marginBottom = '10px';
-    const suggested = lot.our_price || Math.round((lot.start_price || 0) * 0.97);
-    item.innerHTML = `
-      <div style="display:flex;gap:10px;align-items:flex-start">
-        <input type="checkbox" id="cb-${lot.lot_id}" data-lot="${lot.lot_id}" style="margin-top:4px;accent-color:var(--accent)">
-        <div style="flex:1;min-width:0">
-          <div class="flex justify-between items-center">
-            <span class="tender-id mono" style="font-size:10px">${lot.lot_id}</span>
-            <div style="display:flex;gap:6px;align-items:center">
-              ${lot.auto_submitted ? '<span class="badge badge-success">Подан</span>' : lot.our_price ? '<span class="badge badge-accent">Цена ✓</span>' : '<span class="badge badge-muted">Нет цены</span>'}
-              <button class="btn btn-ghost btn-sm" style="padding:2px 6px;color:var(--danger)"
-                onclick="deleteLot('${lot.lot_id}', 'ЗЦП', this)">✕</button>
-            </div>
-          </div>
-          <div class="tender-name" style="font-size:12.5px;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lot.name_ru || 'Без названия'}</div>
-          <div class="tender-meta mb-2">
-            <span class="tender-price" style="font-size:13px">${NK.fmt.money(lot.start_price)}</span>
-            <span class="text-muted">до ${NK.fmt.date(lot.deadline)}</span>
-          </div>
-          <div class="input-addon">
-            <input class="input" type="number" id="batch-price-${lot.lot_id}"
-              placeholder="Ваша цена" value="${suggested || ''}"
-              style="font-size:13px;padding:8px 44px 8px 12px"
-              oninput="updateBatchDiscount('${lot.lot_id}', ${lot.start_price || 0})"
-              onchange="saveLotPrice('${lot.lot_id}', this.value)">
-            <span class="input-addon-text">₸</span>
-          </div>
-          <div class="tooltip-text" id="batch-discount-${lot.lot_id}" style="margin-top:4px"></div>
-        </div>
+  _batchLots.forEach(lot => renderZczCard(lot, container));
+}
+
+function renderZczCard(lot, container) {
+  const item = document.createElement('div');
+  item.className = 'card';
+  item.style.marginBottom = '10px';
+  item.dataset.lotId = lot.lot_id;
+
+  const suggested = lot.our_price || Math.round((lot.start_price || 0) * 0.97);
+
+  const statusHtml = lot.auto_submitted
+    ? `<div class="alert" style="background:rgba(52,211,153,0.1);border-color:rgba(52,211,153,0.3);color:#34d399;padding:8px 10px;margin-top:8px;font-size:12px">
+         ✅ Заявка подана автоматически — ${NK.fmt.money(lot.our_price)}
+       </div>`
+    : lot.our_price
+    ? `<div class="alert alert-info" style="padding:8px 10px;margin-top:8px;font-size:12px">
+         ⏳ Ожидает открытия приёма заявок — цена ${NK.fmt.money(lot.our_price)}
+       </div>`
+    : `<div class="alert alert-warning" style="padding:8px 10px;margin-top:8px;font-size:12px">
+         ⚠️ Цена не указана — бот не сможет подать заявку
+       </div>`;
+
+  item.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <!-- Порядок + чекбокс -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:2px">
+        <button class="btn btn-ghost" style="padding:1px 5px;font-size:11px" onclick="moveCard(this,'up')">▲</button>
+        <input type="checkbox" id="cb-${lot.lot_id}" data-lot="${lot.lot_id}" style="accent-color:var(--accent)">
+        <button class="btn btn-ghost" style="padding:1px 5px;font-size:11px" onclick="moveCard(this,'down')">▼</button>
       </div>
-    `;
-    container.appendChild(item);
-    // Показать начальный % снижения если цена уже есть
-    if (suggested && lot.start_price) updateBatchDiscount(lot.lot_id, lot.start_price);
-  });
+
+      <div style="flex:1;min-width:0">
+        <div class="flex justify-between items-center">
+          <span class="tender-id mono" style="font-size:10px">${lot.lot_id}</span>
+          <button class="btn btn-ghost btn-sm" style="padding:2px 6px;color:var(--danger)"
+            onclick="deleteLot('${lot.lot_id}', 'ЗЦП', this)">✕</button>
+        </div>
+        <div class="tender-name" style="font-size:12.5px;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lot.name_ru || 'Без названия'}</div>
+        <div class="tender-meta mb-2">
+          <span class="tender-price" style="font-size:13px">${NK.fmt.money(lot.start_price)}</span>
+          <span class="text-muted">до ${NK.fmt.date(lot.deadline)}</span>
+        </div>
+        <div class="input-addon">
+          <input class="input" type="number" id="batch-price-${lot.lot_id}"
+            placeholder="Ваша цена" value="${suggested || ''}"
+            style="font-size:13px;padding:8px 44px 8px 12px"
+            oninput="updateBatchDiscount('${lot.lot_id}', ${lot.start_price || 0})"
+            onchange="saveLotPrice('${lot.lot_id}', this.value)">
+          <span class="input-addon-text">₸</span>
+        </div>
+        <div class="tooltip-text" id="batch-discount-${lot.lot_id}" style="margin-top:4px"></div>
+        ${statusHtml}
+      </div>
+    </div>
+  `;
+
+  container.appendChild(item);
+  if (suggested && lot.start_price) updateBatchDiscount(lot.lot_id, lot.start_price);
 }
 
 function updateBatchDiscount(lotId, startPrice) {
@@ -127,6 +148,11 @@ function updateBatchDiscount(lotId, startPrice) {
 async function saveLotPrice(lotId, price) {
   await API.setZczPrice(lotId, parseFloat(price), 'ЗЦП');
 }
+
+document.getElementById('zcz-refresh-btn')?.addEventListener('click', async () => {
+  NK.toast('Обновляю...', 'info');
+  await renderBatchLots();
+});
 
 document.getElementById('zcz-select-80')?.addEventListener('click', () => {
   _batchLots.forEach(l => {
@@ -160,6 +186,16 @@ async function deleteLot(lotId, purchaseType, btn) {
       NK.toast('Ошибка удаления', 'error');
     }
   });
+}
+
+function moveCard(btn, dir) {
+  const card = btn.closest('.card');
+  const container = card.parentElement;
+  if (dir === 'up' && card.previousElementSibling) {
+    container.insertBefore(card, card.previousElementSibling);
+  } else if (dir === 'down' && card.nextElementSibling) {
+    container.insertBefore(card.nextElementSibling, card);
+  }
 }
 
 function showProgress(selectedLots) {
